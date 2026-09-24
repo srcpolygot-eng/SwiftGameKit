@@ -1,0 +1,232 @@
+// swift-tools-version: 6.4
+import PackageDescription
+
+let package = Package(
+    name: "SwiftGameKit",
+    platforms: [
+        .macOS(.v13),
+        .iOS(.v16),
+        .tvOS(.v16),
+        .watchOS(.v9)
+    ],
+    products: [
+        .library(name: "SGKMath", targets: ["SGKMath"]),
+        .library(name: "SGKCore", targets: ["SGKCore"]),
+        .library(name: "SGKECS", targets: ["SGKECS"]),
+        .library(name: "SGKScene", targets: ["SGKScene"]),
+        .library(name: "SGKRendering", targets: ["SGKRendering"]),
+        .library(name: "SGKPhysics", targets: ["SGKPhysics"]),
+        .library(name: "SGKAnimation", targets: ["SGKAnimation"]),
+        .library(name: "SGKAudio", targets: ["SGKAudio"]),
+        .library(name: "SGKInput", targets: ["SGKInput"]),
+        .library(name: "SGKUI", targets: ["SGKUI"]),
+        .library(name: "SGKParticles", targets: ["SGKParticles"]),
+        .library(name: "SGKAssets", targets: ["SGKAssets"]),
+        .library(name: "SGKSerialization", targets: ["SGKSerialization"]),
+        .library(name: "SGKDebugging", targets: ["SGKDebugging"]),
+        .library(name: "SGKProfiling", targets: ["SGKProfiling"]),
+        .library(name: "SGKUtilities", targets: ["SGKUtilities"]),
+        .library(name: "SGKAI", targets: ["SGKAI"]),
+        .library(name: "SGKNetworking", targets: ["SGKNetworking"]),
+        .library(name: "SGKGameplay", targets: ["SGKGameplay"]),
+        .library(name: "SwiftGameKit", targets: ["SwiftGameKit"]),
+        .executable(name: "PlatformerExample", targets: ["PlatformerExample"]),
+        .executable(name: "TopDownExample", targets: ["TopDownExample"]),
+        .executable(name: "ParticleSandbox", targets: ["ParticleSandbox"]),
+        .executable(name: "PhysicsSandbox", targets: ["PhysicsSandbox"]),
+        .executable(name: "Simple3DExample", targets: ["Simple3DExample"]),
+        .executable(name: "AIPathfindingDemo", targets: ["AIPathfindingDemo"]),
+        .executable(name: "UIDemo", targets: ["UIDemo"]),
+        .executable(name: "ProceduralDemo", targets: ["ProceduralDemo"]),
+        .executable(name: "AudioDemo", targets: ["AudioDemo"]),
+    ],
+    targets: [
+        // MARK: - Foundation
+        .target(
+            name: "SGKMath",
+            path: "Sources/SGKMath"
+        ),
+        .target(
+            name: "SGKCore",
+            dependencies: ["SGKMath"],
+            path: "Sources/SGKCore"
+        ),
+        .target(
+            name: "SGKUtilities",
+            dependencies: ["SGKMath", "SGKCore"],
+            path: "Sources/SGKUtilities"
+        ),
+        .target(
+            name: "SGKSerialization",
+            dependencies: ["SGKCore"],
+            path: "Sources/SGKSerialization"
+        ),
+        .target(
+            name: "SGKProfiling",
+            dependencies: ["SGKCore"],
+            path: "Sources/SGKProfiling"
+        ),
+        .target(
+            name: "SGKDebugging",
+            dependencies: ["SGKCore", "SGKProfiling"],
+            path: "Sources/SGKDebugging"
+        ),
+
+        // MARK: - ECS & Scene
+        .target(
+            name: "SGKECS",
+            dependencies: ["SGKMath", "SGKCore", "SGKUtilities"],
+            path: "Sources/SGKECS"
+        ),
+        .target(
+            name: "SGKScene",
+            dependencies: ["SGKECS", "SGKMath", "SGKCore"],
+            path: "Sources/SGKScene"
+        ),
+
+        // MARK: - Rendering & Graphics
+        .target(
+            name: "SGKRendering",
+            dependencies: ["SGKMath", "SGKCore", "SGKScene"],
+            path: "Sources/SGKRendering"
+        ),
+
+        // MARK: - Simulation
+        .target(
+            name: "SGKPhysics",
+            dependencies: ["SGKMath", "SGKCore", "SGKECS"],
+            path: "Sources/SGKPhysics"
+        ),
+        .target(
+            name: "SGKAnimation",
+            dependencies: ["SGKMath", "SGKCore", "SGKECS"],
+            path: "Sources/SGKAnimation"
+        ),
+        .target(
+            name: "SGKParticles",
+            dependencies: ["SGKMath", "SGKCore", "SGKRendering"],
+            path: "Sources/SGKParticles"
+        ),
+
+        // MARK: - Media & Input
+        .target(
+            name: "SGKAudio",
+            dependencies: ["SGKCore", "SGKMath"],
+            path: "Sources/SGKAudio"
+        ),
+        .target(
+            name: "SGKInput",
+            dependencies: ["SGKCore", "SGKMath"],
+            path: "Sources/SGKInput"
+        ),
+        .target(
+            name: "SGKUI",
+            dependencies: ["SGKMath", "SGKCore", "SGKInput", "SGKRendering"],
+            path: "Sources/SGKUI"
+        ),
+
+        // MARK: - Assets & Higher Level
+        .target(
+            name: "SGKAssets",
+            dependencies: ["SGKCore", "SGKSerialization", "SGKMath"],
+            path: "Sources/SGKAssets"
+        ),
+        .target(
+            name: "SGKAI",
+            dependencies: ["SGKMath", "SGKCore", "SGKECS", "SGKUtilities"],
+            path: "Sources/SGKAI"
+        ),
+        .target(
+            name: "SGKNetworking",
+            dependencies: ["SGKCore", "SGKSerialization"],
+            path: "Sources/SGKNetworking"
+        ),
+        .target(
+            name: "SGKGameplay",
+            dependencies: [
+                "SGKMath", "SGKCore", "SGKECS", "SGKScene",
+                "SGKPhysics", "SGKAnimation", "SGKUtilities"
+            ],
+            path: "Sources/SGKGameplay"
+        ),
+
+        // MARK: - Umbrella
+        .target(
+            name: "SwiftGameKit",
+            dependencies: [
+                "SGKMath", "SGKCore", "SGKECS", "SGKScene",
+                "SGKRendering", "SGKPhysics", "SGKAnimation",
+                "SGKAudio", "SGKInput", "SGKUI", "SGKParticles",
+                "SGKAssets", "SGKSerialization", "SGKDebugging",
+                "SGKProfiling", "SGKUtilities", "SGKAI",
+                "SGKNetworking", "SGKGameplay"
+            ],
+            path: "Sources/SwiftGameKit"
+        ),
+
+        // MARK: - Tests
+        .testTarget(
+            name: "SGKMathTests",
+            dependencies: ["SGKMath"]
+        ),
+        .testTarget(
+            name: "SGKECSTests",
+            dependencies: ["SGKECS", "SGKMath"]
+        ),
+        .testTarget(
+            name: "SGKCoreTests",
+            dependencies: ["SGKCore", "SGKMath"]
+        ),
+        .testTarget(
+            name: "SwiftGameKitTests",
+            dependencies: ["SwiftGameKit"]
+        ),
+
+        // MARK: - Examples
+        .executableTarget(
+            name: "PlatformerExample",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/PlatformerExample"
+        ),
+        .executableTarget(
+            name: "TopDownExample",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/TopDownExample"
+        ),
+        .executableTarget(
+            name: "ParticleSandbox",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/ParticleSandbox"
+        ),
+        .executableTarget(
+            name: "PhysicsSandbox",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/PhysicsSandbox"
+        ),
+        .executableTarget(
+            name: "Simple3DExample",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/Simple3DExample"
+        ),
+        .executableTarget(
+            name: "AIPathfindingDemo",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/AIPathfindingDemo"
+        ),
+        .executableTarget(
+            name: "UIDemo",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/UIDemo"
+        ),
+        .executableTarget(
+            name: "ProceduralDemo",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/ProceduralDemo"
+        ),
+        .executableTarget(
+            name: "AudioDemo",
+            dependencies: ["SwiftGameKit"],
+            path: "Examples/AudioDemo"
+        ),
+    ]
+)
