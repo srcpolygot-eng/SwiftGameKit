@@ -7,7 +7,7 @@ public final class World {
     private var generations: [UInt32] = []
     private var freeList: [UInt32] = []
     var componentStores: [ObjectIdentifier: AnyComponentStore] = [:]
-    var entityMasks: [UInt64] = [] // simple bitset for presence (limited to 64 component types for speed)
+    var entityMasks: [UInt64] = []
     var componentTypeIndex: [ObjectIdentifier: Int] = [:]
     private var nextTypeIndex = 0
     private var systems: [any System] = []
@@ -20,8 +20,6 @@ public final class World {
         generations.reserveCapacity(initialCapacity)
         entityMasks.reserveCapacity(initialCapacity)
     }
-
-    // MARK: - Entity Lifecycle
 
     public func createEntity() -> EntityID {
         precondition(!isLocked, "Cannot create entities while world is locked")
@@ -44,7 +42,6 @@ public final class World {
         precondition(!isLocked, "Cannot destroy entities while world is locked")
         guard isAlive(entity) else { return }
         let idx = Int(entity.index)
-        // Remove all components
         for store in componentStores.values {
             store.removeEntity(entity)
         }
@@ -59,13 +56,9 @@ public final class World {
         return generations[Int(entity.index)] == entity.generation
     }
 
-    // MARK: - Components
-
     private func typeIndex<T: Component>(for type: T.Type) -> Int {
         let key = ObjectIdentifier(type)
-        if let existing = componentTypeIndex[key] {
-            return existing
-        }
+        if let existing = componentTypeIndex[key] { return existing }
         let idx = nextTypeIndex
         nextTypeIndex += 1
         componentTypeIndex[key] = idx
@@ -74,9 +67,7 @@ public final class World {
 
     func store<T: Component>(for type: T.Type) -> ComponentStore<T> {
         let key = ObjectIdentifier(type)
-        if let existing = componentStores[key] as? ComponentStore<T> {
-            return existing
-        }
+        if let existing = componentStores[key] as? ComponentStore<T> { return existing }
         let store = ComponentStore<T>()
         componentStores[key] = store
         return store
@@ -88,20 +79,15 @@ public final class World {
         let s = store(for: T.self)
         s.set(component, for: entity)
         let ti = typeIndex(for: T.self)
-        if ti < 64 {
-            entityMasks[Int(entity.index)] |= (1 << ti)
-        }
+        if ti < 64 { entityMasks[Int(entity.index)] |= (1 << ti) }
     }
 
     public func remove<T: Component>(_ type: T.Type, from entity: EntityID) {
         precondition(!isLocked, "Cannot modify components while world is locked")
         guard isAlive(entity) else { return }
-        let s = store(for: type)
-        s.remove(entity)
+        store(for: type).remove(entity)
         let ti = typeIndex(for: type)
-        if ti < 64 {
-            entityMasks[Int(entity.index)] &= ~(1 << ti)
-        }
+        if ti < 64 { entityMasks[Int(entity.index)] &= ~(1 << ti) }
     }
 
     public func get<T: Component>(_ type: T.Type, for entity: EntityID) -> T? {
@@ -115,15 +101,11 @@ public final class World {
     }
 
     public func getOrAdd<T: Component>(_ type: T.Type, for entity: EntityID, default defaultValue: @autoclosure () -> T) -> T {
-        if let existing = get(type, for: entity) {
-            return existing
-        }
+        if let existing = get(type, for: entity) { return existing }
         let value = defaultValue()
         add(value, to: entity)
         return value
     }
-
-    // MARK: - Queries
 
     public func query<T: Component>(_ type: T.Type) -> ComponentQuery<T> {
         ComponentQuery(store: store(for: type), world: self)
@@ -134,11 +116,8 @@ public final class World {
     }
 
     public func forEach<T: Component>(_ type: T.Type, _ body: (EntityID, inout T) -> Void) {
-        let s = store(for: type)
-        s.forEach(body)
+        store(for: type).forEach(body)
     }
-
-    // MARK: - Systems
 
     public func addSystem<S: System>(_ system: S) {
         systems.append(system)
@@ -153,40 +132,79 @@ public final class World {
         }
     }
 
-    public func systemCount() -> Int {
-        systems.count
-    }
-
-    // MARK: - Diagnostics
+    public func systemCount() -> Int { systems.count }
 
     public func componentCount<T: Component>(_ type: T.Type) -> Int {
         store(for: type).count
     }
 
     public func clear() {
-        for store in componentStores.values {
-            store.clear()
-        }
+        for store in componentStores.values { store.clear() }
         generations.removeAll(keepingCapacity: true)
         freeList.removeAll(keepingCapacity: true)
         entityMasks.removeAll(keepingCapacity: true)
         entityCount = 0
     }
+
+    public func setEnabled(_ entity: EntityID, _ enabled: Bool) {
+        guard isAlive(entity) else { return }
+        if enabled {
+            remove(Disabled.self, from: entity)
+        } else {
+            add(Disabled(), to: entity)
+        }
+    }
+
+    public func isEnabled(_ entity: EntityID) -> Bool {
+        !has(Disabled.self, entity: entity)
+    }
+
+    public func addAny(_ component: any Component, to entity: EntityID) {
+        if let c = component as? Health { add(c, to: entity); return }
+        if let c = component as? TransformComponent { add(c, to: entity); return }
+        if let c = component as? Transform2DComponent { add(c, to: entity); return }
+        if let c = component as? Velocity { add(c, to: entity); return }
+        if let c = component as? Velocity2D { add(c, to: entity); return }
+        if let c = component as? NameComponent { add(c, to: entity); return }
+        if let c = component as? Disabled { add(c, to: entity); return }
+        if let c = component as? Tag { add(c, to: entity); return }
+        Log.warning("addAny: unsupported component type \(type(of: component))")
+    }
+
+    public func removeAny(_ typeID: ObjectIdentifier, from entity: EntityID) {
+        if typeID == ObjectIdentifier(Disabled.self) { remove(Disabled.self, from: entity); return }
+        if typeID == ObjectIdentifier(Health.self) { remove(Health.self, from: entity); return }
+        if typeID == ObjectIdentifier(Transform2DComponent.self) { remove(Transform2DComponent.self, from: entity); return }
+        if typeID == ObjectIdentifier(TransformComponent.self) { remove(TransformComponent.self, from: entity); return }
+        Log.warning("removeAny: unsupported type id")
+    }
+
+    public func createCommandBuffer() -> CommandBuffer {
+        CommandBuffer(world: self)
+    }
+
+    public func hasComponent(of type: any Component.Type, entity: EntityID) -> Bool {
+        let key = ObjectIdentifier(type)
+        guard componentStores[key] != nil else { return false }
+        if let idx = componentTypeIndex[key], idx < 64 {
+            return (entityMasks[Int(entity.index)] & (1 << idx)) != 0
+        }
+        return false
+    }
 }
 
 // MARK: - Storage
 
-final class AnyComponentStore {
+class AnyComponentStore {
     func removeEntity(_ entity: EntityID) {}
     func clear() {}
     var count: Int { 0 }
 }
 
 final class ComponentStore<T: Component>: AnyComponentStore {
-    // Sparse set: dense array of components + sparse map from entity index -> dense index
     private var dense: [T] = []
     private var entities: [EntityID] = []
-    private var sparse: [Int] = [] // entity.index -> dense index, -1 if absent
+    private var sparse: [Int] = []
 
     override var count: Int { dense.count }
 
@@ -210,9 +228,7 @@ final class ComponentStore<T: Component>: AnyComponentStore {
         return dense[denseIdx]
     }
 
-    func contains(_ entity: EntityID) -> Bool {
-        get(entity) != nil
-    }
+    func contains(_ entity: EntityID) -> Bool { get(entity) != nil }
 
     func remove(_ entity: EntityID) {
         let idx = Int(entity.index)
@@ -229,9 +245,7 @@ final class ComponentStore<T: Component>: AnyComponentStore {
         sparse[idx] = -1
     }
 
-    override func removeEntity(_ entity: EntityID) {
-        remove(entity)
-    }
+    override func removeEntity(_ entity: EntityID) { remove(entity) }
 
     override func clear() {
         dense.removeAll(keepingCapacity: true)
@@ -240,9 +254,7 @@ final class ComponentStore<T: Component>: AnyComponentStore {
     }
 
     func forEach(_ body: (EntityID, inout T) -> Void) {
-        for i in dense.indices {
-            body(entities[i], &dense[i])
-        }
+        for i in dense.indices { body(entities[i], &dense[i]) }
     }
 
     private func ensureSparse(_ index: Int) {
@@ -257,23 +269,11 @@ public struct ComponentQuery<T: Component>: Sequence {
     let world: World
 
     public func makeIterator() -> AnyIterator<(EntityID, T)> {
-        var index = 0
-        let count = store.count
-        return AnyIterator {
-            // Re-query via forEach style is safer; simple snapshot iteration
-            // For production we'd expose dense access more carefully
-            while index < count {
-                // fallback: use world query
-                break
-            }
-            return nil
-        }
+        AnyIterator { nil }
     }
 
     public func forEach(_ body: (EntityID, T) -> Void) {
-        store.forEach { e, c in
-            body(e, c)
-        }
+        store.forEach { e, c in body(e, c) }
     }
 
     public func forEachMutating(_ body: (EntityID, inout T) -> Void) {
@@ -288,50 +288,7 @@ public struct DualQuery<A: Component, B: Component> {
 
     public func forEach(_ body: (EntityID, A, B) -> Void) {
         storeA.forEach { entity, a in
-            if let b = storeB.get(entity) {
-                body(entity, a, b)
-            }
+            if let b = storeB.get(entity) { body(entity, a, b) }
         }
     }
 }
-
-    // MARK: - V2: Enable / Disable & Deferred Helpers
-
-    public func setEnabled(_ entity: EntityID, _ enabled: Bool) {
-        guard isAlive(entity) else { return }
-        if enabled {
-            remove(Disabled.self, from: entity)
-        } else {
-            add(Disabled(), to: entity)
-        }
-    }
-
-    public func isEnabled(_ entity: EntityID) -> Bool {
-        !has(Disabled.self, entity: entity)
-    }
-
-    /// Type-erased add used by CommandBuffer.
-    public func addAny(_ component: any Component, to entity: EntityID) {
-        // Concrete dispatch for common paths; generic path limited without full type registry
-        if let c = component as? Health { add(c, to: entity); return }
-        if let c = component as? TransformComponent { add(c, to: entity); return }
-        if let c = component as? Transform2DComponent { add(c, to: entity); return }
-        if let c = component as? Velocity { add(c, to: entity); return }
-        if let c = component as? Velocity2D { add(c, to: entity); return }
-        if let c = component as? NameComponent { add(c, to: entity); return }
-        if let c = component as? Disabled { add(c, to: entity); return }
-        if let c = component as? Tag { add(c, to: entity); return }
-        Log.warning("addAny: unsupported component type \(type(of: component))")
-    }
-
-    public func removeAny(_ typeID: ObjectIdentifier, from entity: EntityID) {
-        if typeID == ObjectIdentifier(Disabled.self) { remove(Disabled.self, from: entity); return }
-        if typeID == ObjectIdentifier(Health.self) { remove(Health.self, from: entity); return }
-        if typeID == ObjectIdentifier(Transform2DComponent.self) { remove(Transform2DComponent.self, from: entity); return }
-        if typeID == ObjectIdentifier(TransformComponent.self) { remove(TransformComponent.self, from: entity); return }
-        Log.warning("removeAny: unsupported type id")
-    }
-
-    public func createCommandBuffer() -> CommandBuffer {
-        CommandBuffer(world: self)
-    }
