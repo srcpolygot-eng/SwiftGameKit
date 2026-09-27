@@ -3,15 +3,15 @@ import SGKCore
 import SGKProfiling
 
 public enum Debug {
-    public static var showFPS = false
-    public static var showColliders = false
-    public static var showBounds = false
-    public static var showEntityCount = false
-    public static var showProfiler = false
+    nonisolated(unsafe) public static var showFPS = false
+    nonisolated(unsafe) public static var showColliders = false
+    nonisolated(unsafe) public static var showBounds = false
+    nonisolated(unsafe) public static var showEntityCount = false
+    nonisolated(unsafe) public static var showProfiler = false
 
-    private static var frameTimes: [Double] = []
-    private static var lastFPSUpdate = 0.0
-    private static var currentFPS: Double = 0
+    nonisolated(unsafe) private static var frameTimes: [Double] = []
+    nonisolated(unsafe) private static var lastFPSUpdate = 0.0
+    nonisolated(unsafe) private static var currentFPS: Double = 0
 
     public static func recordFrame(deltaTime: Double) {
         frameTimes.append(deltaTime)
@@ -50,9 +50,7 @@ public enum Debug {
     }
 }
 
-// MARK: - Developer Console
-
-public final class DeveloperConsole {
+public final class DeveloperConsole: @unchecked Sendable {
     public static let shared = DeveloperConsole()
 
     public typealias CommandHandler = ([String]) -> String

@@ -23,7 +23,7 @@ public struct InputAction: Sendable {
     }
 }
 
-public final class InputSystem {
+public final class InputSystem: @unchecked Sendable {
     public static let shared = InputSystem()
 
     private var keyDown = Set<KeyCode>()
@@ -38,7 +38,6 @@ public final class InputSystem {
     private var axes: [String: (positive: KeyCode, negative: KeyCode)] = [:]
 
     private init() {
-        // Default mappings
         bindAction("jump", keys: [.space, .w, .up])
         bindAction("fire", mouseButtons: [.left])
         bindAxis("horizontal", positive: .d, negative: .a)
@@ -55,25 +54,28 @@ public final class InputSystem {
         axes[name] = (positive, negative)
     }
 
-    // Called by platform layer
     public func keyDown(_ key: KeyCode) {
         if !keyDown.contains(key) { keyPressed.insert(key) }
         keyDown.insert(key)
+        keyReleased.remove(key)
     }
 
     public func keyUp(_ key: KeyCode) {
         keyDown.remove(key)
         keyReleased.insert(key)
+        keyPressed.remove(key)
     }
 
     public func mouseDown(_ button: MouseButton) {
         if !mouseDown.contains(button) { mousePressed.insert(button) }
         mouseDown.insert(button)
+        mouseReleased.remove(button)
     }
 
     public func mouseUp(_ button: MouseButton) {
         mouseDown.remove(button)
         mouseReleased.insert(button)
+        mousePressed.remove(button)
     }
 
     public func setMousePosition(_ pos: Vector2) {
@@ -92,38 +94,30 @@ public final class InputSystem {
     public func isKeyDown(_ key: KeyCode) -> Bool { keyDown.contains(key) }
     public func isKeyPressed(_ key: KeyCode) -> Bool { keyPressed.contains(key) }
     public func isKeyReleased(_ key: KeyCode) -> Bool { keyReleased.contains(key) }
-
     public func isMouseDown(_ button: MouseButton) -> Bool { mouseDown.contains(button) }
     public func isMousePressed(_ button: MouseButton) -> Bool { mousePressed.contains(button) }
+    public func isMouseReleased(_ button: MouseButton) -> Bool { mouseReleased.contains(button) }
 
-    public func action(_ name: String) -> ActionState {
-        guard let action = actions[name] else { return ActionState() }
-        var state = ActionState()
-        for k in action.keys {
-            if keyDown.contains(k) { state.held = true }
-            if keyPressed.contains(k) { state.pressed = true }
-            if keyReleased.contains(k) { state.released = true }
-        }
-        for b in action.mouseButtons {
-            if mouseDown.contains(b) { state.held = true }
-            if mousePressed.contains(b) { state.pressed = true }
-            if mouseReleased.contains(b) { state.released = true }
-        }
-        return state
+    public func isActionPressed(_ name: String) -> Bool {
+        guard let action = actions[name] else { return false }
+        if action.keys.contains(where: { isKeyPressed($0) }) { return true }
+        if action.mouseButtons.contains(where: { isMousePressed($0) }) { return true }
+        return false
     }
 
-    public func axis(_ name: String) -> Float {
+    public func isActionDown(_ name: String) -> Bool {
+        guard let action = actions[name] else { return false }
+        if action.keys.contains(where: { isKeyDown($0) }) { return true }
+        if action.mouseButtons.contains(where: { isMouseDown($0) }) { return true }
+        return false
+    }
+
+    public func getAxis(_ name: String) -> Float {
         guard let axis = axes[name] else { return 0 }
         var v: Float = 0
-        if keyDown.contains(axis.positive) { v += 1 }
-        if keyDown.contains(axis.negative) { v -= 1 }
+        if isKeyDown(axis.positive) { v += 1 }
+        if isKeyDown(axis.negative) { v -= 1 }
         return v
-    }
-
-    public struct ActionState: Sendable {
-        public var pressed = false
-        public var held = false
-        public var released = false
     }
 }
 

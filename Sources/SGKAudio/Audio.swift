@@ -18,7 +18,6 @@ public struct AudioHandle: Hashable, Sendable {
     public static let invalid = AudioHandle(0)
 }
 
-/// Software / stub backend for platforms without native audio or headless.
 public final class NullAudioBackend: AudioBackend {
     private var nextID: UInt64 = 1
     public init() {}
@@ -38,12 +37,12 @@ public final class NullAudioBackend: AudioBackend {
 }
 
 public enum Audio {
-    public static var backend: AudioBackend = NullAudioBackend()
-    public static var masterVolume: Float = 1 {
+    nonisolated(unsafe) public static var backend: AudioBackend = NullAudioBackend()
+    nonisolated(unsafe) public static var masterVolume: Float = 1 {
         didSet { backend.setMasterVolume(masterVolume) }
     }
-    public static var musicVolume: Float = 0.8
-    public static var sfxVolume: Float = 1.0
+    nonisolated(unsafe) public static var musicVolume: Float = 0.8
+    nonisolated(unsafe) public static var sfxVolume: Float = 1.0
 
     @discardableResult
     public static func play(_ id: String, volume: Float = 1, loop: Bool = false) -> AudioHandle {
@@ -52,7 +51,7 @@ public enum Audio {
 
     public static let music = MusicController()
 
-    public final class MusicController {
+    public final class MusicController: @unchecked Sendable {
         private var current: AudioHandle = .invalid
         public func play(_ id: String, volume: Float = 1, loop: Bool = true) {
             if current != .invalid { Audio.backend.stop(current) }
@@ -66,8 +65,6 @@ public enum Audio {
         public func resume() { Audio.backend.resume(current) }
     }
 }
-
-// MARK: - V2 Audio Buses
 
 public final class AudioBus {
     public let name: String
@@ -86,7 +83,7 @@ public final class AudioBus {
     }
 }
 
-public final class AudioManager {
+public final class AudioManager: @unchecked Sendable {
     public static let shared = AudioManager()
 
     public let master = AudioBus(name: "master")
@@ -98,11 +95,11 @@ public final class AudioManager {
     public private(set) var buses: [String: AudioBus] = [:]
 
     private init() {
-        buses["master"] = master
-        buses["music"] = music
-        buses["sfx"] = sfx
-        buses["ambient"] = ambient
-        buses["voice"] = voice
+        buses[master.name] = master
+        buses[music.name] = music
+        buses[sfx.name] = sfx
+        buses[ambient.name] = ambient
+        buses[voice.name] = voice
     }
 
     public func bus(_ name: String) -> AudioBus {
@@ -110,21 +107,5 @@ public final class AudioManager {
         let b = AudioBus(name: name)
         buses[name] = b
         return b
-    }
-
-    public func playSFX(_ id: String, volume: Float = 1) -> AudioHandle {
-        let v = volume * sfx.effectiveVolume * master.effectiveVolume
-        return Audio.backend.playSound(id: id, volume: v, loop: false)
-    }
-
-    public func playMusic(_ id: String, volume: Float = 1, loop: Bool = true) -> AudioHandle {
-        let v = volume * music.effectiveVolume * master.effectiveVolume
-        return Audio.backend.playMusic(id: id, volume: v, loop: loop)
-    }
-
-    public func fadeBus(_ name: String, to target: Float, duration: Float) {
-        // Simple immediate set for V2 foundation; full fade can use Tween
-        bus(name).volume = target
-        Log.debug("AudioBus \(name) -> \(target)")
     }
 }
