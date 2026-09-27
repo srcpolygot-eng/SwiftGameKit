@@ -44,7 +44,6 @@ final class FrameworkTests: XCTestCase {
         config.maxParticles = 10
         config.emissionRate = 100
         let emitter = ParticleEmitter(config: config)
-        emitter.position = Vector2(0, 0)
         for _ in 0..<10 {
             emitter.update(deltaTime: 0.016)
         }
