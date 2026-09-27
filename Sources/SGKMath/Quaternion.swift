@@ -107,7 +107,7 @@ public struct Quaternion: Equatable, Hashable, Codable, Sendable, CustomStringCo
     }
 
     public func slerp(to other: Quaternion, t: Float) -> Quaternion {
-        var q1 = self.normalized
+        let q1 = self.normalized
         var q2 = other.normalized
         var dot = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w
 
