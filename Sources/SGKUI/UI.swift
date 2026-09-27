@@ -110,7 +110,7 @@ public class UIProgressBar: UIElement {
     public var frame: (x: Float, y: Float, w: Float, h: Float)
     public var isVisible = true
     public var isInteractive = false
-    public var progress: Float = 1 // 0...1
+    public var progress: Float = 1
     public var fillColor = Vector4(0.2, 0.8, 0.3, 1)
     public var backgroundColor = Vector4(0.15, 0.15, 0.15, 1)
 
@@ -130,6 +130,8 @@ public class UIProgressBar: UIElement {
 
 public final class UICanvas {
     public var root = UIView(x: 0, y: 0, w: 1280, h: 720)
+
+    public init() {}
 
     public func update(deltaTime: Float) {
         root.update(deltaTime: deltaTime)

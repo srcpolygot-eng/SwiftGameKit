@@ -15,7 +15,6 @@ world.add(NameComponent("Cube"), to: cube)
 let mesh = MeshDescriptor.cube(size: 1)
 print("Cube mesh vertices: \(mesh.vertices.count), indices: \(mesh.indices.count)")
 
-// Rotate cube over time
 var angle: Float = 0
 for frame in 0..<60 {
     angle += 0.05
@@ -24,8 +23,7 @@ for frame in 0..<60 {
         world.add(t, to: cube)
     }
     if frame % 20 == 0 {
-        let t = world.get(TransformComponent.self, for: cube)!
-        print("  Frame \(frame): rotation angle \(String(format: "%.2f", angle))")
+        print("  Frame \(frame): rotation angle \(String(format: \"%.2f\", angle))")
     }
 }
 
