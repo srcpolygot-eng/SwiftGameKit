@@ -110,7 +110,6 @@ public struct Pathfinder {
     }
 }
 
-/// Simple binary heap priority queue.
 public struct PriorityQueue<T: Hashable> {
     private var elements: [(T, Float)] = []
     private var positions: [T: Int] = [:]
@@ -195,6 +194,8 @@ public extension State {
 public final class StateMachine {
     public private(set) var current: (any State)?
     private var states: [String: any State] = [:]
+
+    public init() {}
 
     public func add(_ name: String, state: any State) {
         states[name] = state
