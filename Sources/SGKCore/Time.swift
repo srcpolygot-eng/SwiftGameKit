@@ -4,7 +4,12 @@ import Foundation
 public struct Time: Sendable {
     public private(set) var deltaTime: Double = 0
     public private(set) var unscaledDeltaTime: Double = 0
-    public private(set) var fixedDeltaTime: Double = 1.0 / 60.0
+    /// Fixed timestep used by the physics/simulation loop. Publicly settable so hosts can configure Hz.
+    public var fixedDeltaTime: Double = 1.0 / 60.0 {
+        didSet {
+            if fixedDeltaTime <= 0 { fixedDeltaTime = 1.0 / 60.0 }
+        }
+    }
     public private(set) var time: Double = 0
     public private(set) var unscaledTime: Double = 0
     public private(set) var frameCount: UInt64 = 0
