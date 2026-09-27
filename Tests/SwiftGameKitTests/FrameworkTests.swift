@@ -87,9 +87,12 @@ final class FrameworkTests: XCTestCase {
     }
 
     func testAnimationClip() {
-        var clip = AnimationClip<Float>(name: "test")
-        clip.addKey(time: 0, value: 0)
-        clip.addKey(time: 1, value: 10)
-        XCTAssertEqual(clip.sample(at: 0.5), 5, accuracy: 0.01)
+        let keys = [
+            Keyframe(time: 0, value: Float(0)),
+            Keyframe(time: 1, value: Float(10))
+        ]
+        let clip = AnimationClip(name: "test", keyframes: keys)
+        let sampled = clip.sample(at: 0.5) ?? -1
+        XCTAssertEqual(sampled, 5, accuracy: 0.01)
     }
 }
