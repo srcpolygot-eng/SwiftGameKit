@@ -18,7 +18,8 @@ public struct SaveMetadata: Codable, Sendable {
 }
 
 public enum SaveManager {
-    public static var baseDirectory: URL = {
+    /// Configurable save root. Marked nonisolated(unsafe) for Swift 6; access from the game/main thread.
+    nonisolated(unsafe) public static var baseDirectory: URL = {
         let urls = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
         let dir = (urls.first ?? URL(fileURLWithPath: NSTemporaryDirectory())).appendingPathComponent("SwiftGameKitSaves", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -97,7 +98,8 @@ public protocol SaveMigrator {
 }
 
 public enum SaveMigration {
-    private static var migrators: [SaveMigrator] = []
+    /// Registered migrators. nonisolated(unsafe): register at startup on the main thread.
+    nonisolated(unsafe) private static var migrators: [SaveMigrator] = []
 
     public static func register(_ migrator: SaveMigrator) {
         migrators.append(migrator)
