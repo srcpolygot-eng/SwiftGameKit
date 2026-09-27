@@ -60,6 +60,34 @@ public struct Vector4: Equatable, Hashable, Codable, Sendable, CustomStringConve
         Vector4(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w)
     }
 
+    public static func += (lhs: inout Vector4, rhs: Vector4) {
+        lhs.x += rhs.x
+        lhs.y += rhs.y
+        lhs.z += rhs.z
+        lhs.w += rhs.w
+    }
+
+    public static func -= (lhs: inout Vector4, rhs: Vector4) {
+        lhs.x -= rhs.x
+        lhs.y -= rhs.y
+        lhs.z -= rhs.z
+        lhs.w -= rhs.w
+    }
+
+    public static func *= (lhs: inout Vector4, rhs: Float) {
+        lhs.x *= rhs
+        lhs.y *= rhs
+        lhs.z *= rhs
+        lhs.w *= rhs
+    }
+
+    public static func /= (lhs: inout Vector4, rhs: Float) {
+        lhs.x /= rhs
+        lhs.y /= rhs
+        lhs.z /= rhs
+        lhs.w /= rhs
+    }
+
     public static prefix func - (v: Vector4) -> Vector4 {
         Vector4(-v.x, -v.y, -v.z, -v.w)
     }
