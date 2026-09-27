@@ -23,7 +23,8 @@ for frame in 0..<60 {
         world.add(t, to: cube)
     }
     if frame % 20 == 0 {
-        print("  Frame \(frame): rotation angle \(String(format: \"%.2f\", angle))")
+        let angleStr = String(format: "%.2f", angle)
+        print("  Frame \(frame): rotation angle \(angleStr)")
     }
 }
 
