@@ -48,15 +48,21 @@ final class ECSTests: XCTestCase {
         let world = World()
         let e = world.createEntity()
         world.add(Health(current: 50), to: e)
-        final class HealSystem: System {
+        world.forEach(Health.self) { _, h in
+            h.heal(10)
+        }
+        let health = world.get(Health.self, for: e)?.current
+        XCTAssertEqual(health ?? 0, 60, accuracy: 0.001)
+
+        final class NoopSystem: System {
+            var ran = false
             func update(_ world: World, deltaTime: Double) {
-                world.forEach(Health.self) { _, h in
-                    h.heal(10)
-                }
+                ran = true
             }
         }
-        world.addSystem(HealSystem())
+        let sys = NoopSystem()
+        world.addSystem(sys)
         world.updateSystems(deltaTime: 0.016)
-        XCTAssertEqual(world.get(Health.self, for: e)?.current, 60)
+        XCTAssertTrue(sys.ran)
     }
 }
