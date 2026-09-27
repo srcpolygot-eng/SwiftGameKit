@@ -2,12 +2,11 @@ import Foundation
 import SGKCore
 import SGKMath
 
-/// Recorded input snapshot for a single frame.
 public struct ReplayFrame: Codable, Sendable {
     public var frame: UInt64
     public var time: Double
     public var seed: UInt64?
-    public var actions: [String: Bool] // action name -> pressed
+    public var actions: [String: Bool]
     public var axes: [String: Float]
     public var customEvents: [String]
 
@@ -45,6 +44,8 @@ public final class ReplayRecorder {
     public private(set) var isRecording = false
     private var startTime: Double = 0
 
+    public init() {}
+
     public func begin(seed: UInt64 = 0) {
         frames = []
         initialSeed = seed
@@ -63,7 +64,7 @@ public final class ReplayRecorder {
         isRecording = false
         let duration = frames.last?.time ?? 0
         let meta = ReplayMetadata(name: "replay", frameCount: frames.count, duration: duration, initialSeed: initialSeed)
-        Log.info("Replay stopped: \(frames.count) frames, \(String(format: "%.2f", duration))s")
+        Log.info("Replay stopped: \(frames.count) frames")
         return (meta, frames)
     }
 }
@@ -73,6 +74,8 @@ public final class ReplayPlayer {
     public private(set) var metadata: ReplayMetadata?
     public private(set) var isPlaying = false
     public private(set) var currentIndex = 0
+
+    public init() {}
 
     public func load(metadata: ReplayMetadata, frames: [ReplayFrame]) {
         self.metadata = metadata
@@ -97,7 +100,6 @@ public final class ReplayPlayer {
         currentIndex = max(0, min(frameIndex, frames.count - 1))
     }
 
-    /// Returns the frame for the current index and advances if playing.
     public func nextFrame() -> ReplayFrame? {
         guard currentIndex < frames.count else {
             isPlaying = false

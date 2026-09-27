@@ -176,8 +176,10 @@ public struct CameraComponent: Component, Codable, Sendable {
     }
 }
 
-/// Marker component: entity is disabled and skipped by most systems/queries.
-public struct Disabled: Component, TagComponent, Sendable {}
+public struct Disabled: Component, TagComponent, Sendable {
+    public init() {}
+}
 
-/// Marker for entities that changed this frame (optional tracking).
-public struct Changed: Component, TagComponent, Sendable {}
+public struct Changed: Component, TagComponent, Sendable {
+    public init() {}
+}
