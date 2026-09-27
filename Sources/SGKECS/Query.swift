@@ -78,16 +78,4 @@ extension World {
         }
         return results
     }
-
-    /// Check presence of an arbitrary component type (type-erased helper).
-    public func hasComponent(of type: any Component.Type, entity: EntityID) -> Bool {
-        let key = ObjectIdentifier(type)
-        guard let anyStore = componentStores[key] else { return false }
-        // ComponentStore uses entity presence; we approximate via mask when possible
-        if let idx = componentTypeIndex[key], idx < 64 {
-            return (entityMasks[Int(entity.index)] & (1 << idx)) != 0
-        }
-        // Fallback: try common pattern - not perfect for arbitrary types without generics
-        return false
-    }
 }
