@@ -111,20 +111,32 @@ public final class PhysicsWorld2D {
     public func step(world: World, dt: Double) {
         let fdt = Float(dt)
 
+        // Snapshot dynamic bodies, then write back (avoids exclusive-access on ComponentStore).
+        var bodyUpdates: [(EntityID, RigidBody2D)] = []
+        var transformUpdates: [(EntityID, Transform2DComponent)] = []
+
         world.forEach(RigidBody2D.self) { entity, body in
             guard body.bodyType == .dynamic else { return }
-            body.velocity += self.gravity * body.gravityScale * fdt
-            body.velocity *= max(0, 1 - body.linearDamping * fdt)
-            body.angularVelocity *= max(0, 1 - body.angularDamping * fdt)
+            var b = body
+            b.velocity += self.gravity * b.gravityScale * fdt
+            b.velocity *= max(0, 1 - b.linearDamping * fdt)
+            b.angularVelocity *= max(0, 1 - b.angularDamping * fdt)
 
             if var transform = world.get(Transform2DComponent.self, for: entity) {
-                transform.position += body.velocity * fdt
-                if !body.fixedRotation {
-                    transform.rotation += body.angularVelocity * fdt
+                transform.position += b.velocity * fdt
+                if !b.fixedRotation {
+                    transform.rotation += b.angularVelocity * fdt
                 }
-                world.add(transform, to: entity)
+                transformUpdates.append((entity, transform))
             }
+            bodyUpdates.append((entity, b))
+        }
+
+        for (entity, body) in bodyUpdates {
             world.add(body, to: entity)
+        }
+        for (entity, transform) in transformUpdates {
+            world.add(transform, to: entity)
         }
 
         var entities: [(EntityID, RigidBody2D, Collider2D, Transform2D)] = []
