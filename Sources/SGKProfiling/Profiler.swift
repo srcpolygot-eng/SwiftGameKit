@@ -1,7 +1,7 @@
 import Foundation
 import SGKCore
 
-public final class Profiler {
+public final class Profiler: @unchecked Sendable {
     public static let shared = Profiler()
 
     public struct Sample: Sendable {

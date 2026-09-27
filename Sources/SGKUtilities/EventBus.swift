@@ -2,7 +2,7 @@ import Foundation
 
 public protocol Event: Sendable {}
 
-public final class EventBus {
+public final class EventBus: @unchecked Sendable {
     public static let shared = EventBus()
 
     private var listeners: [ObjectIdentifier: [UUID: (any Event) -> Void]] = [:]
