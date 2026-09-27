@@ -47,7 +47,8 @@ final class ECSTests: XCTestCase {
     func testSystem() {
         let world = World()
         let e = world.createEntity()
-        world.add(Health(current: 50), to: e)
+        // maximum must exceed current or heal() is capped
+        world.add(Health(current: 50, maximum: 100), to: e)
         world.forEach(Health.self) { _, h in
             h.heal(10)
         }
