@@ -4,27 +4,27 @@ import SGKMath
 public final class Tween {
     public private(set) var isRunning = false
     public private(set) var isCompleted = false
-    public var duration: Float = 1
-    public var delay: Float = 0
-    public var from: Float = 0
-    public var to: Float = 1
-    public var easing: Easing = .linear
-    public var onUpdate: ((Float) -> Void)?
-    public var onComplete: (() -> Void)?
 
+    private var duration: Float = 0
     private var elapsed: Float = 0
+    private var delay: Float = 0
+    private var easing: Easing = .linear
+    private var onUpdate: ((Float) -> Void)?
+    private var onComplete: (() -> Void)?
+    private var from: Float = 0
+    private var to: Float = 1
 
     public init() {}
 
     @discardableResult
-    public func from(_ v: Float) -> Tween {
-        from = v
+    public func from(_ value: Float) -> Tween {
+        from = value
         return self
     }
 
     @discardableResult
-    public func to(_ v: Float) -> Tween {
-        to = v
+    public func to(_ value: Float) -> Tween {
+        to = value
         return self
     }
 
@@ -125,13 +125,15 @@ public final class TweenManager: @unchecked Sendable {
     }
 }
 
-public func Tween(_ target: AnyObject? = nil) -> Tween {
-    Tween()
-}
-
 extension Tween {
+    /// Convenience: set duration for a position-style tween. Caller supplies onUpdate.
     public func move(to point: Vector2, duration: Float) -> Tween {
         self.duration(duration)
         return self
+    }
+
+    /// Factory helper (avoids free-function name clash with type `Tween`).
+    public static func make() -> Tween {
+        Tween()
     }
 }
