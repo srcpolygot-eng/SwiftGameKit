@@ -1,50 +1,48 @@
 import Foundation
 import SGKCore
-import SGKMath
 import SGKSerialization
-
-public enum AssetState: Sendable {
-    case unloaded
-    case loading
-    case loaded
-    case failed(Error)
-}
+import SGKMath
 
 public protocol Asset: AnyObject {
     var id: String { get }
-    var state: AssetState { get }
+    var isLoaded: Bool { get }
 }
 
 public final class TextureAsset: Asset {
     public let id: String
-    public private(set) var state: AssetState = .unloaded
+    public private(set) var isLoaded = false
     public var width: Int = 0
     public var height: Int = 0
-    public var data: Data?
+    public var path: String
 
-    public init(id: String) { self.id = id }
+    public init(id: String, path: String) {
+        self.id = id
+        self.path = path
+    }
 
-    public func markLoaded(width: Int, height: Int, data: Data?) {
-        self.width = width
-        self.height = height
-        self.data = data
-        self.state = .loaded
+    public func load() {
+        isLoaded = true
+        Log.debug("Loaded texture \(id) from \(path)")
     }
 }
 
 public final class SoundAsset: Asset {
     public let id: String
-    public private(set) var state: AssetState = .unloaded
-    public var duration: Double = 0
+    public private(set) var isLoaded = false
+    public var path: String
 
-    public init(id: String) { self.id = id }
-    public func markLoaded(duration: Double) {
-        self.duration = duration
-        self.state = .loaded
+    public init(id: String, path: String) {
+        self.id = id
+        self.path = path
+    }
+
+    public func load() {
+        isLoaded = true
+        Log.debug("Loaded sound \(id) from \(path)")
     }
 }
 
-public final class AssetManager {
+public final class AssetManager: @unchecked Sendable {
     public static let shared = AssetManager()
 
     private var textures: [String: TextureAsset] = [:]
@@ -53,38 +51,36 @@ public final class AssetManager {
 
     private init() {}
 
-    public func loadTexture(id: String, path: String? = nil) -> TextureAsset {
+    public func loadTexture(id: String, path: String) -> TextureAsset {
         lock.lock()
         defer { lock.unlock() }
         if let existing = textures[id] { return existing }
-        let asset = TextureAsset(id: id)
-        // Simulated load - in real engine would load from disk / bundle
-        asset.markLoaded(width: 64, height: 64, data: nil)
+        let asset = TextureAsset(id: id, path: path)
+        asset.load()
         textures[id] = asset
-        Log.debug("Loaded texture: \(id)")
         return asset
     }
 
-    public func loadSound(id: String, path: String? = nil) -> SoundAsset {
+    public func loadSound(id: String, path: String) -> SoundAsset {
         lock.lock()
         defer { lock.unlock() }
         if let existing = sounds[id] { return existing }
-        let asset = SoundAsset(id: id)
-        asset.markLoaded(duration: 1.0)
+        let asset = SoundAsset(id: id, path: path)
+        asset.load()
         sounds[id] = asset
-        Log.debug("Loaded sound: \(id)")
         return asset
     }
 
-    public func getTexture(_ id: String) -> TextureAsset? {
-        lock.lock(); defer { lock.unlock() }
+    public func texture(_ id: String) -> TextureAsset? {
+        lock.lock()
+        defer { lock.unlock() }
         return textures[id]
     }
 
-    public func unloadTexture(_ id: String) {
+    public func sound(_ id: String) -> SoundAsset? {
         lock.lock()
-        textures[id] = nil
-        lock.unlock()
+        defer { lock.unlock() }
+        return sounds[id]
     }
 
     public func unloadAll() {
@@ -93,11 +89,4 @@ public final class AssetManager {
         sounds.removeAll()
         lock.unlock()
     }
-
-    public var textureCount: Int {
-        lock.lock(); defer { lock.unlock() }
-        return textures.count
-    }
 }
-
-public let Assets = AssetManager.shared

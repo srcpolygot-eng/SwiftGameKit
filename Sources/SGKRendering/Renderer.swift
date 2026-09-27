@@ -29,7 +29,7 @@ public final class NullRenderBackend: RenderBackend {
     public func drawText(_ text: String, position: Vector2, size: Float, color: Vector4) { drawCalls += 1 }
 }
 
-public final class Renderer {
+public final class Renderer: @unchecked Sendable {
     public static let shared = Renderer()
     public var backend: RenderBackend = NullRenderBackend()
     public private(set) var drawCalls: Int = 0

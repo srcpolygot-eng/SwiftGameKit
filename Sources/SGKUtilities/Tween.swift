@@ -4,27 +4,27 @@ import SGKMath
 public final class Tween {
     public private(set) var isRunning = false
     public private(set) var isCompleted = false
+    public var duration: Float = 1
+    public var delay: Float = 0
+    public var from: Float = 0
+    public var to: Float = 1
+    public var easing: Easing = .linear
+    public var onUpdate: ((Float) -> Void)?
+    public var onComplete: (() -> Void)?
 
-    private var duration: Float = 0
     private var elapsed: Float = 0
-    private var delay: Float = 0
-    private var easing: Easing = .linear
-    private var onUpdate: ((Float) -> Void)?
-    private var onComplete: (() -> Void)?
-    private var from: Float = 0
-    private var to: Float = 1
 
     public init() {}
 
     @discardableResult
-    public func from(_ value: Float) -> Tween {
-        from = value
+    public func from(_ v: Float) -> Tween {
+        from = v
         return self
     }
 
     @discardableResult
-    public func to(_ value: Float) -> Tween {
-        to = value
+    public func to(_ v: Float) -> Tween {
+        to = v
         return self
     }
 
@@ -90,7 +90,7 @@ public final class Tween {
     }
 }
 
-public final class TweenManager {
+public final class TweenManager: @unchecked Sendable {
     public static let shared = TweenManager()
     private var tweens: [Tween] = []
     private let lock = NSLock()
@@ -125,14 +125,12 @@ public final class TweenManager {
     }
 }
 
-// Convenience builders
 public func Tween(_ target: AnyObject? = nil) -> Tween {
     Tween()
 }
 
 extension Tween {
     public func move(to point: Vector2, duration: Float) -> Tween {
-        // Caller supplies onUpdate to apply position
         self.duration(duration)
         return self
     }
