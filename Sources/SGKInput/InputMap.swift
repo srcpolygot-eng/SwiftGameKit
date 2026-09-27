@@ -48,7 +48,7 @@ public final class InputContext {
     }
 }
 
-public final class InputMap {
+public final class InputMap: @unchecked Sendable {
     public static let shared = InputMap()
 
     public private(set) var contexts: [String: InputContext] = [:]
